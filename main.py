@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 
-TOKEN = "7716499994:AAGgYBWRX65n3o5Qi-QW-mosvsNOyQDy1Hk"
+TOKEN = "7716499994:AAEhPROF0AxgMpXAaTG1i9cucYTNDTOWoxM"
 ADMIN_ID = "1226264539"
 
 bot = telebot.TeleBot(TOKEN)
@@ -19,37 +19,9 @@ def start(message):
     text = "Bu botda siz Istanbul 24 open marketiga ishga joylashish uchun ariza topshirasiz."
     bot.send_message(message.chat.id, text, reply_markup=start_menu())
 
-@bot.message_handler(func=lambda message: message.text == "📍 Manzil")
-def send_location(message):
-    bot.send_message(message.chat.id, "Nasaf ko‘chasi, 69 joylashgan manzil:")
-    bot.send_location(message.chat.id, latitude=38.8445, longitude=65.7936)
-    bot.send_message(message.chat.id, "Google Maps orqali yo‘nalish: [Bu yerga bosing](https://goo.gl/maps/XXXXXX)", parse_mode='Markdown')
-
 @bot.message_handler(func=lambda message: message.text == "🗉 Vakansiya")
 def show_vacancies(message):
-    text = """ISTANBUL 24 OPEN ishchilarni taklif qiladi!
-    
-    🧬 Ishga nisbatan talablar:
-    - Mijozlarga to'g'ri maslahat bera olish;
-    - Ish joyida tozalikni saqlash;
-    - Mahsulotlarni joylashtirish.
-    
-    🗂 Sotuvchi shaxsiga nisbatan talablar:
-    - Yoshi 18 dan yuqori;
-    - Jamoa bilan tez topishish;
-    - Tartibli tashqi ko'rinish;
-    - Mijozlar bilan samimiy muloqat;
-    - Har qanday holatdan chiqib keta olish qobilyati;
-    
-    🗄 Ish sharoiti:
-    - Ish haqi 2 000 000 dan boshlanadi;
-    - Rasmiy ishga joylashish;
-    - Ish vaqti:
-       1-smena - 08:00-20:00 gacha
-       2-smena - 20:00-08:00 gacha
-    - Barqaror oylik maoshi;
-    - Qo'shimcha bonuslar;
-    - Mazali tushlik va kechki ovqat;"""
+    text = "Vakansiya ma'lumotlari..."
     bot.send_message(message.chat.id, text)
     ask_position(message)
 
@@ -93,16 +65,25 @@ def ask_phone(message):
     button = types.KeyboardButton("📞 Telefon raqamni yuborish", request_contact=True)
     markup.add(button)
     bot.send_message(message.chat.id, "Telefon raqamingizni yuboring:", reply_markup=markup)
-    bot.register_next_step_handler(message, ask_comment)
+    bot.register_next_step_handler(message, ask_photo)
 
-def ask_comment(message):
+def ask_photo(message):
     if message.contact:
         user_data[message.chat.id]["telefon"] = message.contact.phone_number
-        bot.send_message(message.chat.id, "O‘zingiz haqingizda qisqacha yozing:")
-        bot.register_next_step_handler(message, confirm_application)
+        bot.send_message(message.chat.id, "Iltimos, o‘zingizning fotosuratingizni yuboring:")
+        bot.register_next_step_handler(message, ask_comment)
     else:
         bot.send_message(message.chat.id, "Iltimos, telefon raqamingizni pastdagi tugma orqali yuboring!")
         bot.register_next_step_handler(message, ask_phone)
+
+def ask_comment(message):
+    if message.photo:
+        user_data[message.chat.id]["photo"] = message.photo[-1].file_id
+        bot.send_message(message.chat.id, "O‘zingiz haqingizda qisqacha yozing:")
+        bot.register_next_step_handler(message, confirm_application)
+    else:
+        bot.send_message(message.chat.id, "Iltimos, fotosuratingizni yuboring!")
+        bot.register_next_step_handler(message, ask_photo)
 
 def confirm_application(message):
     user_data[message.chat.id]["izoh"] = message.text
@@ -117,7 +98,7 @@ def confirm_application(message):
     📝 Izoh: {data['izoh']}"""
     
     bot.send_message(message.chat.id, summary)
-    bot.send_message(ADMIN_ID, summary)
+    bot.send_photo(ADMIN_ID, data["photo"], caption=summary)
     bot.send_message(message.chat.id, "✅ Anketangiz yuborildi!")
 
 bot.polling(none_stop=True)
